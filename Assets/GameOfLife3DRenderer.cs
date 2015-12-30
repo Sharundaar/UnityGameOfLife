@@ -19,7 +19,10 @@ public class GameOfLife3DRenderer : MonoBehaviour {
     Color m_DeadColor = Color.grey;
 
     [SerializeField]
-    Color m_AliveColor = Color.yellow;
+    Color m_AliveColor1 = Color.yellow;
+
+    [SerializeField]
+    Color m_AliveColor2 = Color.magenta;
 
     [SerializeField]
     float m_Width = 10.0f;
@@ -27,10 +30,12 @@ public class GameOfLife3DRenderer : MonoBehaviour {
     [SerializeField]
     float m_Height = 10.0f;
 
+    private UnityEngine.UI.Button PlayPauseButton = null;
+
 	// Use this for initialization
 	void Start () {
         m_GameOfLife = GetComponent<GameOfLife>();
-        if (!m_GameOfLife.Started)
+        if (m_GameOfLife.State == GameOfLife.GameState.UNINITIALIZE)
             m_GameOfLife.Initialize();
 
         if (m_GameOfLife != null && m_CellPrefab != null)
@@ -38,6 +43,7 @@ public class GameOfLife3DRenderer : MonoBehaviour {
             m_Cells = new GameObject[m_GameOfLife.Width * m_GameOfLife.Height];
             InitializeCells();
             m_GameOfLife.CellStateChanged += OnCellStateChanged;
+            m_GameOfLife.GameStateChanged += OnGameStateChanged;
             m_bGoodToGo = true;
         }
 	}
@@ -60,7 +66,7 @@ public class GameOfLife3DRenderer : MonoBehaviour {
             m_Cells[i].transform.position = position;
             m_Cells[i].transform.localScale = new Vector3(cellSize.x, cellSize.y, cellSize.x);
             m_Cells[i].name = "Cell_" + i;
-            m_Cells[i].GetComponent<Renderer>().material.color = m_GameOfLife.IsCellAlive(i) ? m_AliveColor : m_DeadColor;
+            m_Cells[i].GetComponent<Renderer>().material.color = m_GameOfLife.GetCellState(i) == 1 ? m_AliveColor1 : m_GameOfLife.GetCellState(i) == 2 ? m_AliveColor2 : m_DeadColor;
 
             position.x += m_Padding + cellSize.x;
         }
@@ -97,9 +103,55 @@ public class GameOfLife3DRenderer : MonoBehaviour {
         return size;
     }
 
-    void OnCellStateChanged(object sender, int cell, bool oldState, bool newState)
+    void OnCellStateChanged(object sender, int cell, int oldState, int newState)
     {
         if((GameOfLife)sender == m_GameOfLife)
-            m_Cells[cell].GetComponent<Renderer>().material.color = newState ? m_AliveColor : m_DeadColor;
+        {
+            m_Cells[cell].GetComponent<Renderer>().material.color = newState == 1 ? m_AliveColor1 : newState == 2 ? m_AliveColor2 : m_DeadColor;
+        }
+    }
+
+    void OnGameStateChanged(object sender, GameOfLife.GameState oldState, GameOfLife.GameState newState)
+    {
+        if (PlayPauseButton == null)
+            return;
+
+        if((GameOfLife)sender == m_GameOfLife)
+        {
+            switch(newState)
+            {
+                case GameOfLife.GameState.PLAY:
+                    PlayPauseButton.GetComponentInChildren<UnityEngine.UI.Text>().text = "Pause";
+                    break;
+                case GameOfLife.GameState.PAUSE:
+                    PlayPauseButton.GetComponentInChildren<UnityEngine.UI.Text>().text = "Play";
+                    break;
+
+                default:
+                    break;
+            }
+        }
+    }
+
+    public void OnPlayPauseButtonClicked(UnityEngine.UI.Button PlayPauseButton)
+    {
+        if (PlayPauseButton != this.PlayPauseButton)
+        {
+            this.PlayPauseButton = PlayPauseButton;
+        }
+        
+        switch(m_GameOfLife.State)
+        {
+            case GameOfLife.GameState.PAUSE:
+                m_GameOfLife.Play();
+                break;
+
+            case GameOfLife.GameState.PLAY:
+                m_GameOfLife.Pause();
+                break;
+
+            default:
+                break;
+        }
     }
 }
