@@ -62,6 +62,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\GameController.cs" />
     <Compile Include="Assets\GameOfLife.cs" />
     <Compile Include="Assets\GameOfLife3DRenderer.cs" />
     <Compile Include="Assets\GameOfLifePlayer.cs" />
